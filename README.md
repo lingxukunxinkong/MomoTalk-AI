@@ -1,5 +1,7 @@
 # MomoTalk AI （桃信AI）
-![MomoTalk AI Logo](https://momotalk.starsky.icu/hi.png)
+<div align="center">
+  <img src="https://momotalk.starsky.icu/hi.png" alt="MomoTalk AI Logo" width="120" height="120">
+</div>
 ## 项目简介
 
 MomoTalk AI 是一款基于 Web 技术的智能聊天应用，集成了 AI 大模型对话功能，支持多种角色设定和个性化对话体验。应用采用 Blue Archive （蔚蓝档案）游戏角色主题设计，提供直观友好的用户界面。
