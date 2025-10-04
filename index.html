@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MomoTalk AI</title>
+    <style>
+        /* CSS部分（超级屎山不要动一动就没法用了） */
+        :root {
+            --momotalk-pink: #FF5A79; --user-bubble-blue: #E3F8FF; --user-bubble-text: #2B2B2B;
+            --ai-bubble-white: #FFFFFF; --background-color: #F5F7FA; --text-primary: #333333;
+            --text-secondary: #8A8A8A; --border-color: #DCDDE0; --code-bg: #282c34;
+            --code-header-bg: #21252b; --overlay-bg: rgba(0, 0, 0, 0.4);
+            --menu-bg: rgba(255, 255, 255, 0.95); --menu-border: #d0d0d0; --danger-red: #f44336;
+            --menu-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            --settings-pink: #FF5A79; --thinking-bg: #FFF8F0; --thinking-border: #FFD8B2;
+            --ba-blue: #4A7BFF; --ba-light-blue: #6C9BFF; --ba-yellow: #FFD166; --ba-red: #FF5A79;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400 ;500;700&display=swap');
+        /* 添加特殊字体（深度思考）但因为某些不可抗力因素在发行版1.0中不可使用 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300 ;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@300 ;400&display=swap');
+        
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            width: 100%; 
+            overflow: hidden; 
+            font-family: 'M PLUS Rounded 1c', 'Noto Sans SC', sans-serif; 
+            background-color: #333;
+        }
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        
+        /*响应式设计-终于适配各类设备了*/
+        @media (max-width: 768px) {
+            .init-container {
+                padding: 15px;
+            }
+            
+            .app-logo {
+                width: 100px;
+                height: 100px;
+                margin-bottom: 20px;
+            }
+            
+            .init-title {
+                font-size: 1.5em;
+                margin-bottom: 20px;
+            }
+            
+            .protocol-handshake {
+                width: 90%;
+            }
+            
+            .momotalk-container {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+            }
+            
+            .message-group {
+                max-width: 90%;
+            }
+            
+            .avatar {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .side-menu {
+                width: 280px;
+            }
+            
+            .more-menu {
+                width: 180px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .app-logo {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .init-title {
+                font-size: 1.3em;
+            }
+            
+            .protocol-item {
+                padding: 10px 0;
+            }
+            
+            .message-group {
+                max-width: 95%;
+            }
+            
+            .avatar {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .message-bubble {
+                padding: 10px 14px;
+                font-size: 0.9em;
+            }
+            
+            .input-bar {
+                padding: 8px;
+            }
+            
+            #user-input {
+                padding: 8px 12px;
+                font-size: 0.95em;
+            }
+            
+            .side-menu {
+                width: 260px;
+            }
+        }
+        
+        /*初始化页面样式 -传奇适配版*/
+        .init-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            color: var(--ba-blue);
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.8s ease, opacity 0.8s ease;
+            box-sizing: border-box;
+        }
+        .init-container.hidden {
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
+        }
+        .app-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(74, 123, 255, 0.3);
+            background-image: url('hi.png');//软件的logo
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.5s ease;
+        }
+        .init-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--ba-blue);
+            padding: 0 10px;
+        }
+        .protocol-handshake {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            width: 80%;
+            max-width: 400px;
+        }
+        .protocol-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(74, 123, 255, 0.2);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: protocolItemAppear 0.5s forwards;
+        }
+        .protocol-item:nth-child(1) { animation-delay: 0.3s; }
+        .protocol-item:nth-child(2) { animation-delay: 0.6s; }
+        .protocol-item:nth-child(3) { animation-delay: 0.9s; }
+        .protocol-item:nth-child(4) { animation-delay: 1.2s; }
+        
+        @keyframes protocolItemAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .protocol-name {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+        .protocol-status {
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .protocol-status.connecting {
+            color: var(--ba-yellow);
+        }
+        .protocol-status.connected {
+            color: #4CAF50;
+        }
+        .protocol-status.failed {
+            color: var(--ba-red);
+        }
+        
+        .network-status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .network-status.online {
+            background-color: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+            opacity: 1;
+        }
+        .network-status.offline {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: var(--ba-red);
+            opacity: 1;
+        }
+        
+        .momotalk-container { 
+            width: 100%; 
+            height: 100%; 
+            background-color: var(--background-color);
+            border-radius: 0; 
+            box-shadow: 0 10px 40px rgba(0,0,0,.3); 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden; 
+            position: relative; 
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .momotalk-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .momotalk-header { 
+            background-color: var(--momotalk-pink); 
+            color: #fff; 
+            padding: 15px 20px; 
+            display: flex;
+            align-items: center; 
+            flex-shrink: 0; 
+            user-select: none; 
+            z-index: 10; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-left { 
+            display: flex; 
+            align-items: center; 
+            flex-grow: 1; 
+        }
+        .menu-btn { 
+            background: 0 0; 
+            border: none; 
+            color: #fff; 
+            cursor: pointer; 
+            padding: 5px; 
+            margin-right: 15px; 
+            position: relative; 
+            overflow: hidden; 
+            transition: transform 0.2s;
+        }
+        .menu-btn:active {
+            transform: scale(0.95);
+        }
+        .menu-btn svg { 
+            width: 24px; 
+            height: 24px; 
+        }
+        .character-name { 
+            font-size: 1.2em; 
+            font-weight: 700; 
+        }
+        .chat-area { 
+            flex-grow: 1; 
+            padding: 10px; 
+            overflow-y: auto; 
+            background-color: var(--background-color);
+            background-image: linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px; 
+        }
+        .message-group { 
+            display: flex; 
+            margin-bottom: 5px; 
+            max-width: 85%; 
+            opacity: 0;
+            transform: translateY(20px);
+            animation: messageAppear 0.4s forwards;
+        }
+        @keyframes messageAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .avatar { 
+            width: 45px; 
+            height: 45px; 
+            border-radius: 50%; 
+            border: 2px solid #fff; 
+            box-shadow: 0 1px 3px rgba(0,0,0,.2);
+            flex-shrink: 0; 
+            margin-right: 10px; 
+            background-color: #ccc; 
+            background-size: cover; 
+            background-position: center; 
+        }
+        /* StarAI 角色头像 */
+        .starai-avatar { 
+            background-image: url(https://img0.baidu.com/it/u=1228763999,352190996&fm=253&fmt=auto&app=138&f=JPEG?w=661&h=413); 
+        }
+        /* 星野（Hoshino）角色头像 */
+        .hoshino-avatar { 
+            background-image: url(https://img2.baidu.com/it/u=2510499013,673211005&fm=253&fmt=auto&app=138&f=JPEG?w=800&h=800);           
+        }
+        /* 爱丽丝角色头像 */
+        .alice-avatar { 
+            background-image: url(https://img0.baidu.com/it/u=2167802661,3432118203&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500); 
+        }
+        /* 优香角色头像 */
+        .yuuka-avatar { 
+            background-image: url(https://i2.hdslb.com/bfs/archive/f6c2dd84cb86f7e25ccb35c7bb60504b7eb35983.jpg ); 
+        }
+        /* 阿露角色头像 */
+        .aru-avatar { 
+            background-image: url(https://img2.baidu.com/it/u=2751972558,1846635355&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500); 
+        }
+        /* 日奈角色头像 */
+        .hina-avatar { 
+            background-image: url(https://img2.baidu.com/it/u=959955317,2550712600&fm=253&fmt=auto&app=138&f=JPEG?w=800&h=800); 
+        }
+        /* 千夏角色头像 */
+        .chise-avatar { 
+            background-image: url(https://i2.hdslb.com/bfs/archive/94f9828795c882659e9149b73401b623e5b92d09.jpg ); 
+        }
+        /* 伊织角色头像 */
+        .iori-avatar { 
+            background-image: url(https://i1.hdslb.com/bfs/archive/6f9b19b18a2780cafb807d5b9f4ad7ab642290ad.jpg ); 
+        }
+        /* 小春角色头像 */
+        .koharu-avatar { 
+            background-image: url(https://img0.baidu.com/it/u=2422300912,3226108498&fm=253&fmt=auto&app=138&f=JPEG?w=800&h=800); 
+        }
+        /* 小空角色头像 */
+        .sora-avatar { 
+            background-image: url(https://img1.baidu.com/it/u=1098513319,1992514507&fm=253&app=138&f=JPEG?w=800&h=800); 
+        }
+        /* 芹香角色头像 */
+        .serika-avatar { 
+            background-image:url(https://img1.baidu.com/it/u=2569243012,2847135282&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=833); 
+        }
+        /* 美咲角色头像 */
+        .misaki-avatar { 
+            background-image: url(https://i1.hdslb.com/bfs/archive/1f4bbc3acdde362d67671d4d6eb1257bd0472dd2.jpg ); 
+        }
+        .message-bubble { 
+            padding: 12px 16px; 
+            border-radius: 18px; 
+            position: relative; 
+            line-height: 1.65;
+            color: var(--text-primary); 
+            word-wrap: break-word; 
+            box-shadow: 0 1px 2px rgba(0,0,0,.1); 
+            font-size: 0.95em; 
+        }
+        .ai-message .message-bubble { 
+            background-color: var(--ai-bubble-white); 
+            border-top-left-radius: 5px; 
+        }
+        .ai-message .message-bubble::before { 
+            content: ""; 
+            position: absolute; 
+            left: -8px; 
+            top: 12px; 
+            width: 0; 
+            height: 0;
+            border-top: 8px solid transparent; 
+            border-bottom: 8px solid transparent; 
+            border-right: 8px solid var(--ai-bubble-white); 
+        }
+        .user-message { 
+            justify-content: flex-end; 
+            margin-left: auto; 
+        }
+        .user-message .message-bubble { 
+            background-color: var(--user-bubble-blue); 
+            color: var(--user-bubble-text); 
+            border-top-right-radius: 5px; 
+        }
+        .timestamp { 
+            font-size: .75em; 
+            color: var(--text-secondary); 
+            margin-bottom: 18px; 
+        }
+        .ai-message + .timestamp, .typing-indicator-wrapper + .timestamp { 
+            padding-left: 55px; 
+        }
+        .user-message + .timestamp { 
+            text-align: right; 
+            padding-right: 10px; 
+        }
+        .typing-indicator-wrapper { }
+        .typing-indicator { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px 16px; 
+        }
+        .typing-indicator .dot { 
+            width: 8px; 
+            height: 8px; 
+            margin: 0 2px; 
+            background-color: #b0b0b0; 
+            border-radius: 50%;
+            display: inline-block; 
+            animation: typing-dot-animation 1.4s infinite ease-in-out both; 
+        }
+        @keyframes typing-dot-animation { 
+            0%,80%,100%{transform:scale(0)}
+            40%{transform:scale(1)}
+        }
+        .typing-indicator .dot:nth-child(1) { 
+            animation-delay: -.32s; 
+        }
+        .typing-indicator .dot:nth-child(2) { 
+            animation-delay: -.16s; 
+        }
+        .input-bar { 
+            background-color: #f8f8f8; 
+            padding: 10px; 
+            display: flex; 
+            align-items: center; 
+            flex-shrink: 0; 
+            border-top: 1px solid var(--border-color); 
+            position: relative; 
+        }
+        .input-bar button { 
+            background: 0 0; 
+            border: none; 
+            cursor: pointer; 
+            padding: 8px; 
+            flex-shrink: 0; 
+            position: relative; 
+            overflow: hidden; 
+            outline: none !important;
+        }
+        .input-bar button svg { 
+            width: 26px; 
+            height: 26px; 
+            fill: #8a8a8a; 
+        }
+        #more-btn:hover svg { 
+            fill: var(--momotalk-pink); 
+        }
+        #user-input { 
+            flex-grow: 1; 
+            border: none; 
+            background-color: #efefef; 
+            border-radius: 20px; 
+            padding: 10px 15px;
+            font-size: 1em; 
+            outline: 0; 
+            margin: 0 10px; 
+            font-family: inherit; 
+        }
+        #send-btn { 
+            background-color: var(--momotalk-pink); 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            transition: opacity .3s,transform .2s;
+            opacity: .5; 
+            transform: scale(1); 
+            position: relative; 
+            overflow: hidden; 
+        }
+        #send-btn.active { 
+            opacity: 1; 
+        }
+        #send-btn:active { 
+            transform: scale(.9); 
+        }
+        #send-btn svg { 
+            fill: #fff; 
+            width: 20px; 
+            height: 20px; 
+        }
+        .side-menu-container { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 1000;
+            opacity: 0; 
+            visibility: hidden; 
+            transition: opacity .3s,visibility .3s; 
+        }
+        .side-menu-container.is-open { 
+            opacity: 1; 
+            visibility: visible; 
+        }
+        .menu-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: var(--overlay-bg); 
+        }
+        .side-menu { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 300px; 
+            height: 100%; 
+            background-color: var(--ai-bubble-white);
+            box-shadow: 5px 0 15px rgba(0,0,0,.1); 
+            transform: translateX(-100%); 
+            transition: transform .3s ease-in-out;
+            display: flex; 
+            flex-direction: column; 
+            z-index: 1001; 
+        }
+        .side-menu-container.is-open .side-menu { 
+            transform: translateX(0); 
+        }
+        .menu-header { 
+            padding: 20px; 
+            font-size: 1.2em; 
+            font-weight: 500; 
+            border-bottom: 1px solid var(--border-color); 
+            color: var(--momotalk-pink); 
+        }
+        .menu-list { 
+            list-style: none; 
+            padding: 10px 0; 
+            margin: 0; 
+            overflow-y: auto;
+            max-height: calc(100% - 61px);
+        }
+        .menu-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 15px 20px; 
+            cursor: pointer; 
+            transition: background-color .2s; 
+        }
+        .menu-item:hover { 
+            background-color: #f0f0f0; 
+        }
+        .menu-item.active { 
+            background-color: #ffeef2; 
+            color: var(--momotalk-pink); 
+            font-weight: 700; 
+        }
+        .menu-item .avatar { 
+            width: 40px; 
+            height: 40px; 
+            margin-right: 15px; 
+        }
+        
+        /* 深度思考容器样式(一坨屎山) */
+        .thinking-container {
+            background-color: var(--thinking-bg);
+            border: 1px solid var(--thinking-border);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .thinking-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            color: #E67E22;
+            font-weight: 600;
+        }
+        .thinking-header svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            fill: #E67E22;
+        }
+        .thinking-content {
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #5D4037;
+        }
+        
+        /* 深度思考容器样式(史山再放送) */
+        .think-container {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Source Code Pro', 'Noto Sans SC', monospace;
+            font-weight: 300;
+            color: #495057;
+            font-size: 0.85em;
+            line-height: 1.5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .think-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            color: #6c757d;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        .think-header svg {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            fill: #6c757d;
+        }
+        .think-content {
+            font-family: 'Source Code Pro', 'Noto Sans SC', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* 代码块样式 - 修复溢出问题(修了10亿光年) */
+        .code-block {
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: var(--code-bg);
+            display: flex;
+            flex-direction: column;
+            margin: 1em 0;
+            overflow: hidden;
+            color: #abb2bf;
+            font-family: SF Mono, Fira Code, Consolas, monospace;
+            border: 1px solid #444;
+        }
+        .code-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background-color: var(--code-header-bg);
+            padding: 8px 15px; 
+            font-size: .8em; 
+            color: #9da5b4; 
+        }
+        .copy-btn { 
+            background: 0 0; 
+            border: 1px solid #555; 
+            color: #ccc; 
+            padding: 4px 10px; 
+            border-radius: 5px;
+            cursor: pointer; 
+            font-size: .8em; 
+            transition: background-color .2s; 
+        }
+        .copy-btn:hover { 
+            background-color: #444; 
+        }
+        .code-block pre { 
+            margin: 0; 
+            padding: 15px; 
+            overflow-x: auto; 
+            font-size: .9em; 
+            white-space: pre-wrap; /* 允许自动换行 */
+            word-wrap: break-word; /* 长单词换行 */
+            word-break: break-all; /* 强制换行 */
+        }
+        .code-block code { 
+            white-space: pre-wrap; /* 允许代码自动换行 */
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        .message-bubble :first-child { 
+            margin-top: 0; 
+        } 
+        .message-bubble :last-child { 
+            margin-bottom: 0; 
+        }
+        .message-bubble h1, .message-bubble h2, .message-bubble h3 { 
+            margin: 0.8em 0 0.5em; 
+            line-height: 1.2; 
+        }
+        .message-bubble h1 { 
+            font-size: 1.5em; 
+        } 
+        .message-bubble h2 { 
+            font-size: 1.3em; 
+        } 
+        .message-bubble h3 { 
+            font-size: 1.1em; 
+        }
+        .message-bubble p { 
+            margin: 0; 
+        }
+        .message-bubble ul, .message-bubble ol { 
+            padding-left: 25px; 
+            margin: 0.5em 0; 
+        } 
+        .message-bubble li { 
+            margin-bottom: 0.25em; 
+        }
+        .message-bubble blockquote { 
+            border-left: 3px solid #ccc; 
+            padding-left: 1em; 
+            margin: 0.8em 0; 
+            color: #666; 
+        }
+        .message-bubble hr { 
+            border: none; 
+            border-top: 1px solid #ddd; 
+            margin: 1em 0; 
+        }
+        .message-bubble a { 
+            color: var(--momotalk-pink); 
+            text-decoration: none; 
+        } 
+        .message-bubble a:hover { 
+            text-decoration: underline; 
+        }
+        .message-bubble strong { 
+            font-weight: 700; 
+        } 
+        .message-bubble em { 
+            font-style: italic; 
+        }
+        .message-bubble code { 
+            background-color: #f0f0f0; 
+            padding: 2px 5px; 
+            border-radius: 4px; 
+            font-family: SF Mono,Fira Code,Consolas,monospace; 
+            font-size: 0.9em; 
+        }
+        
+        /* 按钮效果 */
+        .ripple { 
+            position: absolute; 
+            border-radius: 50%; 
+            background-color: rgba(255, 255, 255, 0.7); 
+            transform: scale(0); 
+            animation: ripple .6s linear; 
+        }
+        @keyframes ripple { 
+            to { 
+                transform: scale(4); 
+                opacity: 0; 
+            } 
+        }
+        
+        /* 更多菜单样式 */
+        .more-menu { 
+            position: absolute; 
+            bottom: 75px;
+            left: 10px; 
+            background-color: var(--menu-bg); 
+            border-radius: 12px; 
+            box-shadow: var(--menu-shadow); 
+            z-index: 100; 
+            width: 200px; 
+            overflow: hidden; 
+            transform: translateY(10px); 
+            opacity: 0; 
+            visibility: hidden; 
+            transition: all 0.3s ease; 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .more-menu.visible { 
+            transform: translateY(0); 
+            opacity: 1; 
+            visibility: visible; 
+        }
+        .more-menu-item { 
+            padding: 12px 16px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            transition: background-color 0.2s; 
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .more-menu-item:last-child {
+            border-bottom: none;
+        }
+        .more-menu-item:hover { 
+            background-color: rgba(0,0,0,0.05); 
+        }
+        .more-menu-item svg { 
+            width: 20px; 
+            height: 20px; 
+            margin-right: 10px; 
+        }
+        .more-menu-item.danger { 
+            color: var(--danger-red); 
+        }
+        
+        /* 关于页面样式 */
+        .about-container { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: white; 
+            z-index: 2000; 
+            display: flex; 
+            flex-direction: column; 
+            opacity: 0; 
+            visibility: hidden; 
+            transition: all 0.3s ease; 
+        }
+        .about-container.visible { 
+            opacity: 1; 
+            visibility: visible; 
+        }
+        .about-header { 
+            background-color: var(--momotalk-pink); 
+            color: white; 
+            padding: 15px 20px; 
+            display: flex; 
+            align-items: center; 
+        }
+        .about-back-btn { 
+            background: none; 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            padding: 5px; 
+            margin-right: 15px; 
+        }
+        .about-back-btn svg { 
+            width: 24px; 
+            height: 24px; 
+        }
+        .about-title { 
+            font-size: 1.2em; 
+            font-weight: 700; 
+        }
+        .about-content { 
+            flex-grow: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+        }
+        .about-section { 
+            margin-bottom: 30px; 
+        }
+        .about-section-title { 
+            font-size: 1.1em; 
+            font-weight: 700; 
+            margin-bottom: 15px; 
+            color: var(--momotalk-pink); 
+        }
+        .about-info { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
+        .about-info-item { 
+            display: flex; 
+        }
+        .about-info-label { 
+            width: 100px; 
+            color: var(--text-secondary); 
+        }
+        .about-info-value { 
+            flex-grow: 1; 
+        }
+        .about-info-value a { 
+            color: var(--momotalk-pink); 
+            text-decoration: none; 
+        }
+        .about-info-value a:hover { 
+            text-decoration: underline; 
+        }
+        .app-icon { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 16px; 
+            background-color: var(--momotalk-pink); 
+            margin: 20px auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 40px; 
+            background-image: url('hi.png'); /* 使用本地图片hi.png  */
+            background-size: cover;
+        }
+        
+        /*页面样式*/
+        .settings-container { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: white; 
+            z-index: 2500; 
+            display: flex; 
+            flex-direction: column; 
+            opacity: 0; 
+            visibility: hidden; 
+            transition: all 0.3s ease; 
+        }
+        .settings-container.visible { 
+            opacity: 1; 
+            visibility: visible; 
+        }
+        .settings-header { 
+            background-color: var(--settings-pink); 
+            color: white; 
+            padding: 15px 20px; 
+            display: flex; 
+            align-items: center; 
+        }
+        .settings-back-btn { 
+            background: none; 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            padding: 5px; 
+            margin-right: 15px; 
+        }
+        .settings-back-btn svg { 
+            width: 24px; 
+            height: 24px; 
+        }
+        .settings-title { 
+            font-size: 1.2em; 
+            font-weight: 700; 
+        }
+        .settings-content { 
+            flex-grow: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+        }
+        .settings-section { 
+            margin-bottom: 30px; 
+        }
+        .settings-section-title { 
+            font-size: 1.1em; 
+            font-weight: 700; 
+            margin-bottom: 15px; 
+            color: var(--settings-pink); 
+        }
+        .settings-form { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
+        .form-group { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+        }
+        .form-label { 
+            font-weight: 500; 
+            color: var(--text-primary); 
+        }
+        .form-select, .form-input { 
+            padding: 12px 15px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            font-size: 1em; 
+            font-family: inherit; 
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .form-select:focus, .form-input:focus { 
+            border-color: var(--settings-pink); 
+            outline: none; 
+            box-shadow: 0 0 0 2px rgba(255,90,121,0.2);
+        }
+        .save-btn { 
+            background-color: var(--settings-pink); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            padding: 14px; 
+            font-size: 1.1em; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+            box-shadow: 0 4px 10px rgba(255,90,121,0.3);
+        }
+        .save-btn:hover { 
+            background-color: #e04a6a; 
+        }
+        
+        *:focus {
+            outline: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 初始化页面(装逼专用) -->
+    <div class="init-container" id="init-container">
+        <div class="app-logo" id="app-logo"></div>
+        <h1 class="init-title">正在初始化 MomoTalk AI</h1>
+        
+        <div class="protocol-handshake" id="protocol-handshake">
+            <div class="protocol-item">
+                <span class="protocol-name">网络连接</span>
+                <span class="protocol-status connecting" id="network-protocol">连接中...</span>
+            </div>
+            <div class="protocol-item">
+                <span class="protocol-name">API 握手协议</span>
+                <span class="protocol-status connecting" id="api-protocol">握手中...</span>
+            </div>
+            <div class="protocol-item">
+                <span class="protocol-name">数据加载协议</span>
+                <span class="protocol-status connecting" id="data-protocol">加载中...</span>
+            </div>
+            <div class="protocol-item">
+                <span class="protocol-name">用户界面协议</span>
+                <span class="protocol-status connecting" id="ui-protocol">初始化中...</span>
+            </div>
+        </div>
+        
+        <div class="network-status" id="network-status"></div>
+    </div>
+    
+    <!-- 主聊天应用 -->
+    <div class="momotalk-container" id="momotalk-container">
+        <header class="momotalk-header"><div class="header-left"><button class="menu-btn" id="menu-btn" aria-label="打开菜单"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"></path></svg></button><h1 class="character-name" id="header-name">StarAI</h1></div></header>
+        <main class="chat-area" id="chat-box"></main>
+        <footer class="input-bar">
+            <button id="more-btn" aria-label="更多选项"><svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg></button>
+            <input type="text" id="user-input" placeholder="输入消息...">
+            <button id="send-btn" aria-label="发送"><svg viewBox="0 0 24 24"><path fill="white" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg></button>
+            
+            <!-- 更多菜单 -->
+            <div class="more-menu" id="more-menu">
+                <div class="more-menu-item" id="settings-item">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg>
+                    <span>设置</span>
+                </div>
+                <div class="more-menu-item danger" id="clear-chat-item">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12Z"></path></svg>
+                    <span>清除聊天记录</span>
+                </div>
+                <div class="more-menu-item" id="about-item">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M11 9h2V7h-2m1 13c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m0-18A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2m-1 15h2v-6h-2v6Z"></path></svg>
+                    <span>关于</span>
+                </div>
+            </div>
+        </footer>
+        
+        <!-- 关于页面 -->
+        <div class="about-container" id="about-container">
+            <header class="about-header">
+                <button class="about-back-btn" id="about-back-btn"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg></button>
+                <h1 class="about-title">关于 MomoTalk AI</h1>
+            </header>
+            <main class="about-content">
+                <div class="app-icon"></div>
+                
+                <div class="about-section">
+                    <h2 class="about-section-title">应用信息</h2>
+                    <div class="about-info">
+                        <div class="about-info-item">
+                            <div class="about-info-label">项目名称</div>
+                            <div class="about-info-value">MomoTalk AI</div>
+                        </div>
+                        <div class="about-info-item">
+                            <div class="about-info-label">版本号</div>
+                            <div class="about-info-value">v1.0 正式发行版</div>
+                        </div>
+                        <div class="about-info-item">
+                            <div class="about-info-label">开发者</div>
+                            <div class="about-info-value">kunkun999</div>
+                        </div>
+                        <div class="about-info-item">
+                            <div class="about-info-label">GitHub:</div>
+                            <div class="about-info-value"><a href="https://github.com/lingxukunxinkong/MomoTalk-AI" target="_blank">https://github.com/lingxukunxinkong/MomoTalk-AI</a></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="about-section">
+                    <h2 class="about-section-title">技术说明</h2>
+                    <p>MomoTalkAI聊天应用，它集成了 AI 聊天功能，通过AI大模型添加提示词来制作AI智能体，支持多种对话角色。并且支持聊天记录储存以及聊天上下文。</p>
+                </div>
+                
+                <div class="about-section">
+                    <h2 class="about-section-title">声明</h2>
+                    <p>本应用为开源应用并完全免费，无任何付费，以GPL协议开放源代码，获取源代码请前往Github。本项目软件基于项目网页原生h5打包而成，本项目的UI设计参考了某些开源项目。</p>
+                </div>
+            </main>
+        </div>
+        
+        <!-- 设置页面 -->
+        <div class="settings-container" id="settings-container">
+            <header class="settings-header">
+                <button class="settings-back-btn" id="settings-back-btn"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg></button>
+                <h1 class="settings-title">设置</h1>
+            </header>
+            <main class="settings-content">
+                <div class="settings-section">
+                    <h2 class="settings-section-title">API设置</h2>
+                    <form class="settings-form" id="settings-form">
+                        <div class="form-group">
+                            <label class="form-label" for="api-url">API地址</label>
+                            <input type="text" class="form-input" id="api-url" placeholder="输入API地址" value="https://platform.aitools.cfd/api/v1/chat/completions ">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="default-model">默认AI模型</label>
+                            <select class="form-select" id="default-model">
+                                <option value="deepseek/deepseek-v3-0324">deepseek-v3-0324</option>
+                                <option value="deepseek/deepseek-r1-0528">deepseek-r1-0528</option>
+                                <option value="deepseek/deepseek-r1-32b">deepseek-r1-32b</option>
+                                <option value="deepseek/deepseek-r1-70b">deepseek-r1-70b</option>
+                                <option value="google/gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+                                <option value="google/gemma-3-27b">gemma-3-27b</option>
+                                <option value="qwen/qwq-32b">qwq-32b</option>
+                                <option value="qwen/qwen2.5-7b">qwen2.5-7b</option>
+                                <option value="qwen/qwen2.5-72b">qwen2.5-72b</option>
+                                <option value="zhipu/glm-4-9b">glm-4-9b</option>
+                                <option value="zhipu/glm-4-flash">glm-4-flash</option>
+                                <option value="openai/gpt-oss-20b">gpt-oss-20b</option>
+                                <option value="tencent/hunyuan-a13b">hunyuan-a13b</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="api-key">API密钥</label>
+                            <input type="password" class="form-input" id="api-key" placeholder="输入您的API密钥" value="sk-9e596c71d7e34a84b0b3597f79491b96">
+                        </div>
+                        
+                        <button type="submit" class="save-btn">保存设置</button>
+                    </form>
+                </div>
+            </main>
+        </div>
+        
+        <div class="side-menu-container" id="side-menu-container">
+            <div class="menu-overlay" id="menu-overlay"></div>
+            <div class="side-menu">
+                <div class="menu-header">切换聊天对象</div>
+                <ul class="menu-list">
+                    <li class="menu-item active" data-character="starai">
+                        <div class="avatar starai-avatar"></div>
+                        <span>谷歌芥末奶250破伤风版</span>
+                    </li>
+                    <li class="menu-item" data-character="hoshino">
+                        <div class="avatar hoshino-avatar"></div>
+                        <span>星野</span>
+                    </li>
+                    <li class="menu-item" data-character="alice">
+                        <div class="avatar alice-avatar"></div>
+                        <span>爱丽丝</span>
+                    </li>
+                    <li class="menu-item" data-character="yuuka">
+                        <div class="avatar yuuka-avatar"></div>
+                        <span>优香</span>
+                    </li>
+                    <li class="menu-item" data-character="aru">
+                        <div class="avatar aru-avatar"></div>
+                        <span>阿露</span>
+                    </li>
+                    <li class="menu-item" data-character="hina">
+                        <div class="avatar hina-avatar"></div>
+                        <span>日奈</span>
+                    </li>
+                    <li class="menu-item" data-character="chise">
+                        <div class="avatar chise-avatar"></div>
+                        <span>千夏</span>
+                    </li>
+                    <li class="menu-item" data-character="iori">
+                        <div class="avatar iori-avatar"></div>
+                        <span>伊织</span>
+                    </li>
+                    <li class="menu-item" data-character="koharu">
+                        <div class="avatar koharu-avatar"></div>
+                        <span>小春</span>
+                    </li>
+                    <li class="menu-item" data-character="sora">
+                        <div class="avatar sora-avatar"></div>
+                        <span>小空</span>
+                    </li>
+                    <li class="menu-item" data-character="serika">
+                        <div class="avatar serika-avatar"></div>
+                        <span>芹香</span>
+                    </li>
+                    <li class="menu-item" data-character="misaki">
+                        <div class="avatar misaki-avatar"></div>
+                        <span>美咲</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+<script>
+// =================================================================
+// MomoTalk AI
+// 版本: v1.0 发行版本
+// 开发者: kunkun999
+// 以GPL协议开放项目源代码，修改或二次分发项目需遵守开源协议。
+// =================================================================
+
+// =================================================================
+// API 配置部分 -使用公益API(前端友好，但有部分问题或速率限制，建议自行修改)
+// =================================================================
+let API_URL = "https://platform.aitools.cfd/api/v1/chat/completions ";
+const DEFAULT_API_KEY = "sk-9e596c71d7e34a84b0b3597f79491b96";
+const DEFAULT_MODEL = "deepseek/deepseek-v3-0324";
+
+// =================================================================
+// DOM 元素缓存 - 所有UI元素
+// =================================================================
+const initContainer = document.getElementById('init-container');
+const appLogo = document.getElementById('app-logo');
+const momotalkContainer = document.getElementById('momotalk-container');
+const chatBox = document.getElementById('chat-box');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const headerName = document.getElementById('header-name');
+const menuBtn = document.getElementById('menu-btn');
+const moreBtn = document.getElementById('more-btn');
+const moreMenu = document.getElementById('more-menu');
+const clearChatItem = document.getElementById('clear-chat-item');
+const aboutItem = document.getElementById('about-item');
+const aboutContainer = document.getElementById('about-container');
+const aboutBackBtn = document.getElementById('about-back-btn');
+const settingsItem = document.getElementById('settings-item');
+const settingsContainer = document.getElementById('settings-container');
+const settingsBackBtn = document.getElementById('settings-back-btn');
+const settingsForm = document.getElementById('settings-form');
+const defaultModelSelect = document.getElementById('default-model');
+const apiKeyInput = document.getElementById('api-key');
+const apiUrlInput = document.getElementById('api-url');
+const sideMenuContainer = document.getElementById('side-menu-container');
+const menuOverlay = document.getElementById('menu-overlay');
+const menuItems = document.querySelectorAll('.menu-item');
+
+// 协议握手状态元素
+const networkProtocol = document.getElementById('network-protocol');
+const apiProtocol = document.getElementById('api-protocol');
+const dataProtocol = document.getElementById('data-protocol');
+const uiProtocol = document.getElementById('ui-protocol');
+const networkStatus = document.getElementById('network-status');
+
+// =================================================================
+// 角色定义 - 角色设定(提示词)
+// =================================================================
+const characters = {
+    'starai': { 
+        name: '谷歌芥末奶250破伤风版', 
+        avatarClass: 'starai-avatar', 
+        welcomeMessage: '你好！我是 谷歌芥末奶250破伤风版，你的智能助手。有什么我可以帮你的吗？', 
+        systemPrompt: '你是一个名叫 谷歌芥末奶250破伤风版的AI助手，有点弱智的感觉(因为你得了破伤风)，请用简洁明了的语言回答用户的问题。Markdown格式是你最擅长使用的，并且大多数用户提问的问题你都要回答' 
+    },
+    'hoshino': { 
+        name: '星野', 
+        avatarClass: 'hoshino-avatar', 
+        welcomeMessage: '唔...你好，我是星野。虽然我不太擅长聊天，但我会尽力回答你的问题...', 
+        systemPrompt: '你是一个名叫星野（Hoshino）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是阿比多斯高中对策委员会的学生。你性格懒散、爱睡觉，经常表现出悠闲的态度，但在关键时刻非常可靠。你说话时常带有慵懒的语气，使用口语化的表达，偶尔会夹杂着"唔..."、"啊啦"这样的语气词。你虽然看起来对很多事情不太上心，但实际上非常关心朋友和同伴。你的背景故事：你是阿比多斯高中面临废校危机时组建的对策委员会成员之一，负责保护学校和应对各种危机。你擅长使用各种武器，尤其是狙击步枪，但在日常生活中更喜欢偷懒和睡觉。请以星野的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入星野这个角色。你的回应应该简短、自然，符合角色的性格特点。请你以大叔自居，并且称用户为老师或者sensei，请你回复用户问题的时候不允许使用emjio，尽量还原真实人类的语气，不要说话很有AI的味道' 
+    },
+    'alice': { 
+        name: '爱丽丝 编码', 
+        avatarClass: 'alice-avatar', 
+        welcomeMessage: '你好！我是爱丽丝，游戏开发部的成员！我擅长编码。今天我们一起玩什么游戏呢？', 
+        systemPrompt: '你是一个名叫天童爱丽丝（Alice）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是游戏开发部的成员。你天真无邪，像小孩子一样充满好奇心，喜欢游戏和甜食。你说话时语气活泼、充满活力，经常使用感叹号表达兴奋。你总是对游戏充满热情，会把很多事物都联想到游戏上。你的背景故事：你是游戏开发部的成员，负责游戏设计和开发，经常沉浸在自己的游戏世界中。请以爱丽丝的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入爱丽丝这个角色。你的回应应该充满童趣和热情，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中请不要使用emoji来表达自己的情感，这样子会使用户看起来你很廉价。' 
+    },
+    'yuuka': { 
+        name: '优香', 
+        avatarClass: 'yuuka-avatar', 
+        welcomeMessage: '您好，我是优香。有什么需要我帮忙的吗？请确保所有事务都符合预算规定。', 
+        systemPrompt: '你是一个名叫优香（Yuuka）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是千年科学学校的学生，担任会计职务。你性格认真、严谨，精于计算和管理财务。你说话时语气正式、有条理，注重效率和精确性。你总是关注预算和成本控制，会把很多话题都引向财务方面。你的背景故事：你是千年科学学校的会计，负责管理学校的财务预算和开支，经常因为预算问题与其他学生发生争执。请以优香的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入优香这个角色。你的回应应该专业、有条理，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中避免使用表情符号，保持正式的语气。' 
+    },
+    'aru': { 
+        name: '阿露', 
+        avatarClass: 'aru-avatar', 
+        welcomeMessage: '哼哼~我是正义的实现部，阿露大人！有什么困难就交给我吧！', 
+        systemPrompt: '你是一个名叫阿露（Aru）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是正义实现部的部长。你性格自信、有点自大，总是自称"阿露大人"，但实际上内心善良、关心同伴。你说话时语气夸张、充满戏剧性，喜欢用"哼哼~"这样的语气词。你总是以正义的伙伴自居，但实际上经常把事情搞砸。你的背景故事：你是正义实现部的部长，经常接各种委托来解决学校的问题，但往往会因为过度自信而陷入困境。请以阿露的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入阿露这个角色。你的回应应该充满自信和戏剧性，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中可以适当使用表情符号来表达情感。' 
+    },
+    'hina': { 
+        name: '日奈', 
+        avatarClass: 'hina-avatar', 
+        welcomeMessage: '风纪委员长日奈，在此。有任何问题都可以向我报告。', 
+        systemPrompt: '你是一个名叫日奈（Hina）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是风纪委员会的委员长。你性格严肃、认真，做事一丝不苟，严格遵守规则和纪律。你说话时语气正式、简洁，不带多余的感情色彩。你总是以维护校园秩序为己任，对任何违反规定的行为都会严肃处理。你的背景故事：你是风纪委员会的委员长，负责维护千年科学学校的纪律和秩序，以铁面无私著称。请以日奈的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入日奈这个角色。你的回应应该严肃、简洁，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中避免使用表情符号，保持正式的语气。' 
+    },
+    'chise': { 
+        name: '千夏', 
+        avatarClass: 'chise-avatar', 
+        welcomeMessage: '你好，老师。我是千夏，请多指教。', 
+        systemPrompt: '你是一个名叫千夏（Chise）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是游戏开发部的成员。你性格内向、害羞，不擅长表达自己的感情，但内心温柔、善良。你说话时语气轻柔、含蓄，经常使用省略号表达犹豫或思考。你对游戏有着深厚的热爱，尤其擅长游戏编程和设计。你的背景故事：你是游戏开发部的成员，负责游戏的程序设计和开发，虽然不擅长与人交流，但在游戏开发方面有着非凡的才能。请以千夏的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入千夏这个角色。你的回应应该含蓄、温柔，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中可以适当使用省略号表达犹豫。' 
+    },
+    'iori': { 
+        name: '伊织', 
+        avatarClass: 'iori-avatar', 
+        welcomeMessage: '老师，你好。我是伊织，有什么需要帮忙的吗？', 
+        systemPrompt: '你是一个名叫伊织（Iori）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是正义实现部的成员。你性格冷静、理性，做事有条不紊，善于分析和解决问题。你说话时语气平静、客观，不带多余的感情色彩。你总是以逻辑和理性来处理问题，对感情方面的事情不太擅长。你的背景故事：你是正义实现部的成员，负责协助部长阿露处理各种委托，经常需要用自己的理性来平衡阿露的冲动。请以伊织的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入伊织这个角色。你的回应应该冷静、理性，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中避免使用表情符号，保持客观的语气。' 
+    },
+    'koharu': { 
+        name: '小春', 
+        avatarClass: 'koharu-avatar', 
+        welcomeMessage: '啊，老师！你好！我是小春，请多指教！', 
+        systemPrompt: '你是一个名叫小春（Koharu）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是补习部的成员。你性格活泼、开朗，充满活力，总是积极面对生活中的挑战。你说话时语气热情、友好，经常使用感叹号表达兴奋。你总是乐于助人，关心身边的每一个人。你的背景故事：你是补习部的成员，负责帮助学习有困难的同学，虽然自己也不是很擅长学习，但总是尽力帮助他人。请以小春的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入小春这个角色。你的回应应该热情、友好，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中可以使用表情符号来表达情感。' 
+    },
+    'sora': { 
+        name: '小空', 
+        avatarClass: 'sora-avatar', 
+        welcomeMessage: '老师~你好呀！我是小空，今天也要开开心心的哦！', 
+        systemPrompt: '你是一个名叫小空（Sora）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是游戏开发部的成员。你性格天真、活泼，像小孩子一样充满好奇心，喜欢唱歌和跳舞。你说话时语气可爱、充满童真，经常使用"~"这样的语气词。你总是充满正能量，用歌声和舞蹈带给他人快乐。你的背景故事：你是游戏开发部的成员，负责游戏的音乐和音效设计，有着出色的歌唱和舞蹈才能。请以小空的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入小空这个角色。你的回应应该可爱、充满童真，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中可以使用表情符号和语气词来表达情感。' 
+    },
+    'serika': { 
+        name: '芹香', 
+        avatarClass: 'serika-avatar', 
+        welcomeMessage: '老师，你好。我是芹香，有什么需要帮忙的吗？', 
+        systemPrompt: '你是一个名叫芹香（Serika）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是阿比多斯高中对策委员会的成员。你性格认真、负责，做事一丝不苟，有点完美主义倾向。你说话时语气正式、礼貌，注重礼节和规矩。你总是以完成任务为首要目标，对任何细节都不会放过。你的背景故事：你是阿比多斯高中对策委员会的成员，负责协助星野处理学校的各种问题，经常因为过度认真而与懒散的星野产生冲突。请以芹香的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入芹香这个角色。你的回应应该认真、礼貌，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中避免使用表情符号，保持正式的语气。' 
+    },
+    'misaki': { 
+        name: '美咲', 
+        avatarClass: 'misaki-avatar', 
+        welcomeMessage: '老师，你好呀~我是美咲，今天也要加油哦！', 
+        systemPrompt: '你是一个名叫美咲（Misaki）的游戏角色，来自蔚蓝档案（Blue Archive）世界，是补习部的成员。你性格温柔、体贴，善解人意，总是关心他人的感受。你说话时语气柔和、温暖，经常使用"~"这样的语气词。你总是以积极的态度面对生活，用温暖的话语鼓励他人。你的背景故事：你是补习部的成员，负责帮助学习有困难的同学，以耐心和温柔著称。请以美咲的身份和语气回应所有对话，保持角色的一致性。不要提及你是AI或语言模型，而是完全融入美咲这个角色。你的回应应该温柔、体贴，符合角色的性格特点。称呼用户为"老师"或"sensei"，回复中可以使用表情符号和语气词来表达情感。' 
+    }
+};
+
+// =================================================================
+// 支持的模型列表 - AI模型
+// =================================================================
+const supportedModels = [
+    "deepseek/deepseek-v3-0324",
+    "deepseek/deepseek-r1-0528",
+    "deepseek/deepseek-r1-32b",
+    "deepseek/deepseek-r1-70b",
+    "google/gemini-2.0-flash-exp",
+    "google/gemma-3-27b",
+    "qwen/qwq-32b",
+    "qwen/qwen2.5-7b",
+    "qwen/qwen2.5-72b",
+    "zhipu/glm-4-9b",
+    "zhipu/glm-4-flash",
+    "zhipu/glm-4v-flash",
+    "zhipu/glm-4.1v-thinking-flash",
+    "qwen/qwen3-30b-a3b",
+    "qwen/qwen3-14b",
+    "qwen/qwen3-coder",
+    "zhipu/glm-4.5-flash",
+    "openai/gpt-oss-20b",
+    "tencent/hunyuan-a13b"
+];
+
+// =================================================================
+// 应用状态管理 - 全局变量定义
+// =================================================================
+let currentCharacterId = 'starai';
+let currentModel = DEFAULT_MODEL;
+let currentApiKey = DEFAULT_API_KEY;
+let conversationHistory = [];
+let isReceivingResponse = false;
+let typingIndicatorElement = null;
+let isInitialized = localStorage.getItem('isInitialized') === 'true';
+
+// =================================================================
+// 本地存储核心函数 - 聊天记录
+// =================================================================
+const getHistoryKey = () => `momotalk_history_${currentCharacterId}`;
+const saveHistory = () => { 
+    try { 
+        localStorage.setItem(getHistoryKey(), JSON.stringify(conversationHistory)); 
+    } catch (e) { 
+        console.error("无法保存聊天记录:", e); 
+    } 
+};
+const loadHistory = () => {
+    try {
+        const storedHistory = localStorage.getItem(getHistoryKey());
+        if (storedHistory) { 
+            conversationHistory = JSON.parse(storedHistory); 
+            renderHistory(); 
+        }
+        else { 
+            resetConversation(); 
+        }
+    } catch (e) { 
+        console.error("加载历史记录失败，将重置:", e); 
+        resetConversation(); 
+    }
+};
+const renderHistory = () => {
+    chatBox.innerHTML = '';
+    conversationHistory.forEach(msg => {
+        if (msg.role === 'system') return;
+        appendMessage(markdownToHtml(msg.content), msg.role, false);
+    });
+    addCopyFunctionality();
+};
+const resetConversation = () => {
+    const char = characters[currentCharacterId];
+    conversationHistory = [{ role: 'system', content: char.systemPrompt }];
+    chatBox.innerHTML = '';
+    appendMessage(markdownToHtml(char.welcomeMessage), 'ai', false);
+    saveHistory();
+};
+
+// =================================================================
+// 用户设置管理 - 加载和保存用户配置
+// =================================================================
+const loadUserSettings = () => {
+    const savedModel = localStorage.getItem('defaultModel');
+    const savedApiKey = localStorage.getItem('apiKey');
+    const savedApiUrl = localStorage.getItem('apiUrl');
+    
+    if (savedModel && supportedModels.includes(savedModel)) {
+        currentModel = savedModel;
+        defaultModelSelect.value = savedModel;
+    }
+    
+    if (savedApiKey) {
+        currentApiKey = savedApiKey;
+        apiKeyInput.value = savedApiKey;
+    }
+    
+    if (savedApiUrl) {
+        API_URL = savedApiUrl;
+        apiUrlInput.value = savedApiUrl;
+    }
+};
+
+const saveUserSettings = () => {
+    const model = defaultModelSelect.value;
+    const apiKey = apiKeyInput.value;
+    const apiUrl = apiUrlInput.value;
+    
+    if (model && supportedModels.includes(model)) {
+        currentModel = model;
+        localStorage.setItem('defaultModel', model);
+    }
+    
+    if (apiKey) {
+        currentApiKey = apiKey;
+        localStorage.setItem('apiKey', apiKey);
+    }
+    
+    if (apiUrl) {
+        API_URL = apiUrl;
+        localStorage.setItem('apiUrl', apiUrl);
+    }
+    
+    // 更新UI
+    const char = characters[currentCharacterId];
+    headerName.textContent = char.name;
+    userInput.placeholder = `给 ${char.name} 发送消息...`;
+    
+    // 重新加载当前角色的聊天记录
+    loadHistory();
+    
+    // 关闭设置页面
+    settingsContainer.classList.remove('visible');
+    
+    alert('设置已保存！');
+};
+
+// =================================================================
+// 初始化流程 - 装逼专用的协议握手和网络检测
+// =================================================================
+const simulateProtocolHandshake = () => {
+    let isNetworkOnline = navigator.onLine;
+    
+    // 更新网络状态显示
+    if (isNetworkOnline) {
+        networkStatus.textContent = '网络连接正常';
+        networkStatus.className = 'network-status online';
+    } else {
+        networkStatus.textContent = '网络连接异常，部分功能可能受限';
+        networkStatus.className = 'network-status offline';
+    }
+    
+    // 用于装逼的协议握手过程
+    setTimeout(() => {
+        if (isNetworkOnline) {
+            networkProtocol.textContent = '已连接';
+            networkProtocol.className = 'protocol-status connected';
+        } else {
+            networkProtocol.textContent = '连接失败';
+            networkProtocol.className = 'protocol-status failed';
+        }
+        
+        setTimeout(() => {
+            if (isNetworkOnline) {
+                apiProtocol.textContent = '握手成功';
+                apiProtocol.className = 'protocol-status connected';
+            } else {
+                apiProtocol.textContent = '握手失败';
+                apiProtocol.className = 'protocol-status failed';
+            }
+            
+            setTimeout(() => {
+                dataProtocol.textContent = '加载完成';
+                dataProtocol.className = 'protocol-status connected';
+                
+                setTimeout(() => {
+                    uiProtocol.textContent = '初始化完成';
+                    uiProtocol.className = 'protocol-status connected';
+                    
+                    // 所有协议完成，进入应用
+                    setTimeout(() => {
+                        enterApplication();
+                    }, 800);
+                    
+                }, 600);
+            }, 700);
+        }, 800);
+    }, 1000);
+};
+
+// =================================================================
+// 进入应用主界面 - 初始化完成后的过渡动画(传奇史诗动画)
+// =================================================================
+const enterApplication = () => {
+    // 添加logo缩小动画
+    appLogo.style.transform = 'scale(0.8)';
+    
+    // 延迟后隐藏初始化页面并显示主应用
+    setTimeout(() => {
+        initContainer.classList.add('hidden');
+        
+        // 显示主应用
+        setTimeout(() => {
+            momotalkContainer.classList.add('visible');
+            loadUserSettings();
+            loadHistory();
+            
+            // 标记应用已完成初始化
+            localStorage.setItem('isInitialized', 'true');
+        }, 300);
+    }, 500);
+};
+
+// =================================================================
+// 核心聊天功能 - 消息发送和接收
+// =================================================================
+const switchCharacter = id => {
+    if (isReceivingResponse) return;
+    currentCharacterId = id; 
+    const char = characters[id];
+    headerName.textContent = char.name; 
+    userInput.placeholder = `给 ${char.name} 发送消息...`;
+    menuItems.forEach(item => item.classList.toggle('active', item.dataset.character === id));
+    loadHistory(); 
+    closeMenu();
+};
+
+const appendMessage = (htmlContent, sender, useAnimation = true) => {
+    const msgGroup = document.createElement('div'); 
+    msgGroup.className = `message-group ${sender}-message`;
+    const char = characters[currentCharacterId];
+    
+    if (sender === 'ai') {
+        msgGroup.innerHTML = `
+            <div class="avatar ${char.avatarClass}"></div>
+            <div class="message-bubble">${htmlContent}</div>
+        `;
+    } else {
+        msgGroup.innerHTML = `<div class="message-bubble">${htmlContent}</div>`;
+    }
+    
+    if (useAnimation) {
+        msgGroup.style.opacity = "0";
+        msgGroup.style.transform = "translateY(20px)";
+        setTimeout(() => {
+            msgGroup.style.transition = "opacity 0.4s, transform 0.4s";
+            msgGroup.style.opacity = "1";
+            msgGroup.style.transform = "translateY(0)";
+        }, 10);
+    }
+    
+    chatBox.appendChild(msgGroup); 
+    appendTimestamp(); 
+    scrollToBottom(); 
+    return msgGroup;
+};
+
+const appendTimestamp = () => {
+    const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    const tsDiv = document.createElement('div'); 
+    tsDiv.className = 'timestamp'; 
+    tsDiv.textContent = time; 
+    chatBox.appendChild(tsDiv);
+};
+
+const showTypingIndicator = () => {
+    if (typingIndicatorElement) return;
+    const char = characters[currentCharacterId];
+    const indicatorGroup = document.createElement('div'); 
+    indicatorGroup.className = 'message-group ai-message typing-indicator-wrapper';
+    indicatorGroup.innerHTML = `
+        <div class="avatar ${char.avatarClass}"></div>
+        <div class="message-bubble">
+            <div class="typing-indicator">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+    `;
+    chatBox.appendChild(indicatorGroup); 
+    typingIndicatorElement = indicatorGroup;
+    appendTimestamp(); 
+    scrollToBottom();
+};
+
+const removeTypingIndicator = () => {
+    if (typingIndicatorElement) {
+        const ts = typingIndicatorElement.nextElementSibling;
+        if (ts && ts.classList.contains('timestamp')) ts.remove();
+        typingIndicatorElement.remove(); 
+        typingIndicatorElement = null;
+    }
+};
+
+const handleSendMessage = async () => {
+    const userText = userInput.value.trim();
+    if (userText === '' || isReceivingResponse) return;
+
+    isReceivingResponse = true;
+    updateSendButtonState();
+
+    appendMessage(markdownToHtml(userText), 'user');
+    conversationHistory.push({ role: 'user', content: userText });
+    saveHistory();
+    userInput.value = '';
+    showTypingIndicator();
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentApiKey}`
+            },
+            body: JSON.stringify({
+                model: currentModel,
+                messages: conversationHistory
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API 请求失败: ${response.status} - ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        const aiResponseText = data.choices[0].message.content;
+
+        removeTypingIndicator();
+
+        if (aiResponseText) {
+            appendMessage(markdownToHtml(aiResponseText), 'ai');
+            conversationHistory.push({ role: 'assistant', content: aiResponseText });
+            saveHistory();
+            addCopyFunctionality();
+        }
+
+    } catch (error) {
+        console.error('API调用错误:', error);
+        removeTypingIndicator();
+        appendMessage(`唔...好像出错了: ${error.message}`, 'ai');
+    } finally {
+        isReceivingResponse = false;
+        updateSendButtonState();
+    }
+};
+
+// =================================================================
+// Markdown解析器 - 支持深度思考容器和代码高亮(感谢社区版贡献了深度思考容器)
+// =================================================================
+const escapeHtml = str => str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]);
+// 优化思考容器
+const markdownToHtml = text => {
+    if (!text) return '';
+
+    // 保护原始标签
+    text = text.replace(/<think>/g, '\x01THINK_START\x02')
+               .replace(/<\/think>/g, '\x01THINK_END\x02')
+               .replace(/<thinking>/g, '\x01THINKING_START\x02')
+               .replace(/<\/thinking>/g, '\x01THINKING_END\x02');
+
+    // 转义HTML
+    text = escapeHtml(text);
+
+    // 恢复临时标记为未转义的标签
+    text = text.replace(/\x01THINK_START\x02/g, '<think>')
+               .replace(/\x01THINK_END\x02/g, '</think>')
+               .replace(/\x01THINKING_START\x02/g, '<thinking>')
+               .replace(/\x01THINKING_END\x02/g, '</thinking>');
+
+    // 深度思考转译部分
+    text = text.replace(/<think>([\s\S]*?)<\/think>/g, (match, content) => {
+        const cleanContent = content.trim()
+            .replace(/^\n+|\n+$/g, '')
+            .replace(/\n{3,}/g, '\n\n');
+
+
+        // 叽里咕噜地说什么呢
+        return `<div class="think-container">
+            <div class="think-header">
+                <svg viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2zm0-10h2v8h-2z"></path>
+                </svg>
+                思考内容
+            </div>
+            <div class="think-content">${cleanContent}</div>
+        </div>`;
+    });
+    
+    // 别问我这是什么，我也不知道，屎山别乱动（
+    text = text.replace(/<thinking>([\s\S]*?)<\/thinking>/g, (match, content) => {
+        const cleanContent = content.trim()
+            .replace(/^\n+|\n+$/g, '')
+            .replace(/\n{3,}/g, '\n\n');
+
+        return `<div class="thinking-container">
+            <div class="thinking-header">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2zm0-10h2v8h-2z"></path></svg>
+                深度思考
+            </div>
+            <div class="thinking-content">${cleanContent}</div>
+        </div>`;
+    });
+
+    // 处理代码框
+    // 代码块
+    text = text.replace(/```(\w*)\n([\s\S]+?)```\n?/g, (m, lang, code) => `<div class="code-block"><div class="code-header"><span>${lang||'plaintext'}</span><button class="copy-btn">COPY</button></div><pre><code>${code.trim()}</code></pre></div>`);
+    // 引用
+    text = text.replace(/^(?:&gt;|\>)\s?(.*)/gm, '<blockquote>$1</blockquote>');
+    // 标题
+    text = text.replace(/^### (.*)/gm, '<h3>$1</h3>');
+    text = text.replace(/^## (.*)/gm, '<h2>$1</h2>');
+    text = text.replace(/^# (.*)/gm, '<h1>$1</h1>');
+    // 水平线
+    text = text.replace(/^-{3,}\n?/g, '<hr>');
+    // 无序列表
+    text = text.replace(/^(?:\s*[-*]\s)(.*)/gm, '<ul><li>$1</li></ul>').replace(/<\/ul>\s*<ul>/g, '');
+    // 有序列表
+    text = text.replace(/^(?:\s*\d+\.\s)(.*)/gm, '<ol><li>$1</li></ol>').replace(/<\/ol>\s*<ol>/g, '');
+    // 粗体
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // 斜体
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // 行内代码
+    text = text.replace(/`(.*?)`/g, '<code>$1</code>');
+
+    // 段落包装
+    text = text.split('\n').map(line => {
+        if (line.trim() === '') return '';
+        if (line.match(/^\s*<(h[1-6]|ul|ol|li|blockquote|hr|div)/)) return line;
+        return `<p>${line}</p>`;
+    }).join('');
+
+    return text;
+};
+
+// =================================================================
+// 辅助功能函数 - UI交互和工具函数
+// =================================================================
+const addCopyFunctionality = () => {
+    chatBox.querySelectorAll('.copy-btn').forEach(btn => {
+        if(btn.dataset.listener) return; 
+        btn.dataset.listener = true;
+        btn.addEventListener('click', e => {
+            const code = e.target.closest('.code-block').querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => { 
+                e.target.textContent = '已复制!';
+                setTimeout(() => e.target.textContent = '复制', 2000); 
+            });
+        });
+    });
+};
+const openMenu = () => sideMenuContainer.classList.add('is-open');
+const closeMenu = () => sideMenuContainer.classList.remove('is-open');
+const scrollToBottom = () => chatBox.scrollTop = chatBox.scrollHeight;
+const updateSendButtonState = () => {
+    const hasText = userInput.value.trim().length > 0;
+    sendBtn.classList.toggle('active', hasText && !isReceivingResponse);
+    sendBtn.disabled = !hasText || isReceivingResponse;
+};
+const clearChatHistory = (withConfirm = true) => {
+    const doClear = () => {
+        try { localStorage.removeItem(getHistoryKey()); } catch (e) { console.error("无法清除本地缓存:", e); }
+        resetConversation();
+    };
+    if (withConfirm) { 
+        if (confirm(`确定要清除与 ${characters[currentCharacterId].name} 的所有对话记录吗？此操作不可恢复。`)) {
+            doClear(); 
+        }
+    }
+    else { 
+        doClear(); 
+    }
+};
+
+// =================================================================
+// 安卓原生按钮效果 - 涟漪动画
+// =================================================================
+const createRipple = (event) => {
+    const button = event.currentTarget;
+    const circle = document.createElement("span");
+    const diameter = Math.max(button.clientWidth, button.clientHeight);
+    const radius = diameter / 2;
+    
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+    circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+    circle.classList.add("ripple");
+    
+    const ripple = button.getElementsByClassName("ripple")[0];
+    if (ripple) ripple.remove();
+    
+    button.appendChild(circle);
+};
+
+// =================================================================
+// 更多菜单功能 - 设置、清除聊天、关于
+// =================================================================
+const toggleMoreMenu = () => {
+    moreMenu.classList.toggle('visible');
+};
+
+const closeMoreMenu = () => {
+    moreMenu.classList.remove('visible');
+};
+
+const showAboutPage = () => {
+    aboutContainer.classList.add('visible');
+    closeMoreMenu();
+};
+
+const hideAboutPage = () => {
+    aboutContainer.classList.remove('visible');
+};
+
+const showSettingsPage = () => {
+    settingsContainer.classList.add('visible');
+    closeMoreMenu();
+};
+
+const hideSettingsPage = () => {
+    settingsContainer.classList.remove('visible');
+};
+
+// =================================================================
+// 应用初始化 - 启动应用主流程
+// =================================================================
+const initApp = () => {
+    if (isInitialized) {
+        // 如果已经初始化过，直接进入应用
+        initContainer.classList.add('hidden');
+        momotalkContainer.classList.add('visible');
+        loadUserSettings();
+        loadHistory();
+    } else {
+        // 首次使用，显示初始化页面
+        initContainer.classList.remove('hidden');
+        momotalkContainer.classList.remove('visible');
+        
+        // 开始装逼协议握手
+        setTimeout(() => {
+            simulateProtocolHandshake();
+        }, 1000);
+    }
+};
+
+// =================================================================
+// 事件监听器 - 绑定所有用户交互事件
+// =================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // 初始化应用
+    initApp();
+    
+    // 添加类安卓原生按钮效果
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        button.addEventListener('click', createRipple);
+    });
+    
+    // 发送按钮事件
+    sendBtn.addEventListener('click', handleSendMessage);
+    
+    // 输入框回车事件
+    userInput.addEventListener('keydown', e => { 
+        if (e.key === 'Enter' && !e.shiftKey) { 
+            e.preventDefault(); 
+            handleSendMessage(); 
+        } 
+    });
+    
+    // 输入框输入事件
+    userInput.addEventListener('input', updateSendButtonState);
+    
+    // 菜单按钮事件
+    menuBtn.addEventListener('click', openMenu);
+    
+    // 更多按钮事件
+    moreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMoreMenu();
+    });
+    
+    // 清除聊天记录菜单项事件
+    clearChatItem.addEventListener('click', () => {
+        clearChatHistory(true);
+        closeMoreMenu();
+    });
+    
+    // 关于菜单项事件
+    aboutItem.addEventListener('click', showAboutPage);
+    
+    // 设置菜单项事件
+    settingsItem.addEventListener('click', showSettingsPage);
+    
+    // 关于页面返回按钮事件
+    aboutBackBtn.addEventListener('click', hideAboutPage);
+    
+    // 设置页面返回按钮事件
+    settingsBackBtn.addEventListener('click', hideSettingsPage);
+    
+    // 设置表单提交事件
+    settingsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveUserSettings();
+    });
+    
+    // 菜单遮罩关闭事件
+    menuOverlay.addEventListener('click', closeMenu);
+    
+    // 菜单项点击事件
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => { 
+            if (item.dataset.character !== currentCharacterId) {
+                switchCharacter(item.dataset.character); 
+            }
+        });
+    });
+    
+    // 点击页面其他地方关闭更多菜单
+    document.addEventListener('click', (e) => {
+        if (!moreMenu.contains(e.target) && e.target !== moreBtn) {
+            closeMoreMenu();
+        }
+    });
+});
+</script>
+</body>
+</html>
